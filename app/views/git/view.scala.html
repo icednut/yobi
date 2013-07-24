@@ -1,4 +1,4 @@
-@(project: Project, pull: PullRequest, isSafe: Boolean, commits: List[playRepository.GitCommit], comments: List[SimpleComment])
+@(project: Project, pull: PullRequest, isSafe: Boolean, commits: List[playRepository.GitCommit], comments: List[SimpleComment], patch: String)
 
 @import utils.JodaDateUtil._
 @import utils.TemplateHelper._
@@ -56,6 +56,9 @@
             </li>
             <li>
                 <a href="#commits" data-toggle="tab">커밋</a>
+            </li>
+            <li>
+                <a href="#diffs" data-toggle="tab">Diff</a>
             </li>
         </ul>
         <div class="tab-content">
@@ -130,6 +133,12 @@
                     </table>
                 </div>
             </div>
+
+            <div id="diffs" class="code-browse-wrap tab-pane">
+                <div class="diff-wrap">
+                    <div id="commit" class="diff-body">@patch</div>
+                </div>
+            </div>
         </div>
         <div class="board-footer board-actrow">
             @if(pull.isOpen()){
@@ -184,6 +193,16 @@
 
 @views.html.markdown(project)
 
+<script type="text/x-jquery-tmpl" id="comment-icon-template">
+    <i class="icon-comment"></i>
+</script>
+<script type="text/x-jquery-tmpl" id="linenum-column-template">
+    <td class="linenum"></td>
+</script>
+<script type="text/x-jquery-tmpl" id="comment-button-template">
+    <button class="nbtn medium"></button>
+</script>
+<script type="text/javascript" src="@getJSLink("lib/diff")"></script>
 <script type="text/javascript">
     $(document).ready(function() {
         $('#helpBtn').click(function(e){
@@ -193,6 +212,16 @@
 
         $('span[data-toggle="tooltip"]').tooltip({
             placement : "bottom"
+        })
+
+        @if(isProjectResourceCreatable(UserApp.currentUser, project, ResourceType.CODE_COMMENT)){
+            var bCommentable = true;
+        } else {
+            var bCommentable = false;
+        }
+        $hive.loadModule("code.Diff", {
+            "sAttachmentAction": "@routes.AttachmentApp.uploadFile",
+            "bCommentable": bCommentable
         });
     });
 </script>

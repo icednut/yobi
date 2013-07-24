@@ -17,6 +17,8 @@ import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -442,6 +444,34 @@ public class GitRepository implements PlayRepository {
         diffFormatter.format(DiffEntry.scan(treeWalk));
 
         return out.toString("UTF-8");
+    }
+
+    public static String getPatch(Repository repository, String fromBranch, String toBranch) {
+        TreeWalk treeWalk = new TreeWalk(repository);
+        RevWalk walk = new RevWalk(repository);
+        try {
+            ObjectId from = repository.resolve(fromBranch);
+            RevTree fromTree = walk.parseTree(from);
+
+            ObjectId to = repository.resolve(toBranch);
+            RevTree toTree = walk.parseTree(to);
+
+            treeWalk.addTree(toTree);
+            treeWalk.addTree(fromTree);
+
+            // Render the difference from treeWalk which has two trees.
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            DiffFormatter diffFormatter = new DiffFormatter(out);
+            diffFormatter.setRepository(repository);
+            treeWalk.setRecursive(true);
+            diffFormatter.format(DiffEntry.scan(treeWalk));
+
+            return out.toString("UTF-8");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            walk.release();
+        }
     }
 
     /**
